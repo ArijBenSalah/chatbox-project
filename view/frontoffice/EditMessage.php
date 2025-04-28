@@ -1,49 +1,65 @@
 <?php
-require_once(__DIR__ . "/../../controller/messageController.php");
-require_once(__DIR__ . "/../../model/message.php");
 require_once(__DIR__ . "/../../config.php");
+require_once(__DIR__ . "/../../controller/messageController.php");
 
-session_start();
 header('Content-Type: application/json');
 
-// ✅ CSRF check
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-    echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
+// Check if request is POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405); // Method Not Allowed
+    echo json_encode(['success' => false, 'error' => 'Only POST requests are allowed']);
     exit;
 }
 
-// ✅ Parameter check
-if (!isset($_POST['id']) || !isset($_POST['content'])) {
-    echo json_encode(['success' => false, 'error' => 'Missing parameters']);
+// Get the raw POST data
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
+
+// Validate input
+if (!isset($data['messageId']) || !isset($data['content'])) {
+    http_response_code(400); // Bad Request
+    echo json_encode(['success' => false, 'error' => 'Missing required fields']);
     exit;
 }
 
-$messageController = new messageController();
-$id = (int) $_POST['id'];
-$content = trim($_POST['content']);
+$messageId = $data['messageId'];
+$newContent = trim($data['content']);
+
+// Validate content
+if (empty($newContent)) {
+    http_response_code(400); // Bad Request
+    echo json_encode(['success' => false, 'error' => 'Message content cannot be empty']);
+    exit;
+}
+
+// Sanitize content (prevent XSS)
+$newContent = htmlspecialchars($newContent, ENT_QUOTES, 'UTF-8');
 
 try {
-    // ✅ Get the existing message
-    $original = $messageController->getMessageById($id);
-
-    if (!$original || $original['sender_id'] != ($_SESSION['user_id'] ?? null)) {
-        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    $messageController = new messageController();
+    
+    // Verify message exists and belongs to current user
+    $message = $messageController->getMessageById($messageId);
+    
+    if (!$message) {
+        http_response_code(404); // Not Found
+        echo json_encode(['success' => false, 'error' => 'Message not found']);
         exit;
     }
-
-    // ✅ Create a new Message object
-    $message = new Message(
-        $original['sender_id'],      // sender_id
-        $original['receiver_id'],    // receiver_id
-        $content,                    // ✅ Use the correct content variable!
-        new DateTime()
-    );
-    $message->setId($id);
-
-    // ✅ Update the message
-    $success = $messageController->updateMessage($message);
-
-    echo json_encode(['success' => $success]);
+    
+    
+    
+    // Update the message
+    $success = $messageController->updateMessage($messageId, $newContent);
+    
+    if ($success) {
+        echo json_encode(['success' => true]);
+    } else {
+        http_response_code(500); // Internal Server Error
+        echo json_encode(['success' => false, 'error' => 'Failed to update message']);
+    }
+    
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    http_response_code(500); // Internal Server Error
+    echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
 }

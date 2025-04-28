@@ -9,6 +9,7 @@ $messagesController = new messageController();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
     // Récupérer et nettoyer le message
     $messageContent = trim($_POST['messageInput']);
+    $idreciever = $_POST['idreciever']; // ID du destinataire
 
     // Vérification : message vide
     if (empty($messageContent)) {
@@ -23,16 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
     }
 
     // Créer un objet Message
-    $message = new Message(
-        null,           // sender_id (à compléter si besoin)
-        null,           // receiver_id (à compléter si besoin)
-        $messageContent,
-        new DateTime()  // Date actuelle
-    );
-
-    // Enregistrer le message
-    if ($messagesController->addMessage($message)) {
-        header("Location: contact.php?success=1");
+    $chatboxController = new chatboxcontroller();
+    $chat = $chatboxController->getChatboxByIdsenderAndReciever(1,$idreciever);  
+    if (!$chat) {
+        $chatboxController->addChatbox(1, $idreciever); 
+        $chat = $chatboxController->getChatboxByIdsenderAndReciever(1,$idreciever);
+    }
+    if ($messagesController->addMessage($messageContent, $chat['idChatbox'])) {
+        header("Location: contact.php?user_id=$idreciever&success=message_sent");
         exit();
     } else {
         header("Location: contact.php?error=insert_failed");

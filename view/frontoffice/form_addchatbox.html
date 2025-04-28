@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Créer une Chatbox</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+        }
+        .sidebar {
+            position: fixed;
+            width: 200px;
+            height: 100vh;
+            background-color: #8B0000; /* Rouge foncé */
+            color: white;
+            padding: 20px;
+        }
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 0;
+            margin: 10px 0;
+        }
+        .sidebar a:hover {
+            background-color: #a30000;
+            border-radius: 5px;
+        }
+        .main {
+            margin-left: 220px;
+            padding: 40px;
+            background-color: white;
+            height: 100vh;
+        }
+        .main h1 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+        form {
+            width: 400px;
+            margin: 0 auto;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #8B0000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #a30000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="#">Dashboard</a>
+    <a href="#">Utilisateurs</a>
+    <a href="#">Gestion Covoiturage</a>
+    <a href="#">Réservations</a>
+    <a href="#">Déconnexion</a>
+</div>
+
+<div class="main">
+    <h1>Créer une nouvelle Chatbox</h1>
+    <form action="addchatbox.php" method="POST">
+        <input type="text" name="name" placeholder="Nom de la chatbox" required>
+        <input type="text" name="created_by" placeholder="Créé par (ex: admin)" required>
+        <button type="submit">Créer</button>
+    </form>
+</div>
+
+</body>
+</html>

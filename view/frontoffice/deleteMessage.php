@@ -1,51 +1,83 @@
 <?php
-require_once(__DIR__ . "/../../controller/messageController.php");
-require_once(__DIR__ . "/../../config.php");
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
+// Start session for authentication
 session_start();
 
-// Verify the request method and ID parameter
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && isset($_POST['csrf_token'])) {
-    try {
-        // Verify CSRF token
-        if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-            header("HTTP/1.1 403 Forbidden");
-            exit("Invalid CSRF token");
-        }
+require_once(__DIR__ . "/../../config.php");
+require_once(__DIR__ . "/../../controller/messageController.php");
 
-        $messageController = new messageController();
-        $messageId = (int)$_POST['id'];
-        
-        
-        $message = $messageController->getMessageById($messageId);
-        
-        if (!$message || $message['sender_id'] != ($_SESSION['user_id'] ?? null)) {
-            header("HTTP/1.1 403 Forbidden");
-            exit("You don't have permission to delete this message");
-        }
-        
-        // Delete the message
-        $result = $messageController->deleteMessage($messageId);
-        
-        if ($result) {
-            $_SESSION['success'] = "Message deleted successfully";
-            header("Location: " . ($_SERVER['HTTP_REFERER'] ?? 'contact.php'));
-            exit();
-        } else {
-            throw new Exception("Failed to delete message");
-        }
-        
-    } catch (Exception $e) {
-        // Log the error
-        error_log("Error deleting message: " . $e->getMessage());
-        
-        // Redirect with error message
-        $_SESSION['error'] = "An error occurred while deleting the message";
-        header("Location: " . ($_SERVER['HTTP_REFERER'] ?? 'contact.php'));
-        exit();
+// Set JSON header for potential AJAX responses
+header('Content-Type: application/json');
+
+try {
+    // Verify request method
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        throw new Exception('Invalid request method', 405);
     }
-} else {
-    header("HTTP/1.1 400 Bad Request");
-    exit("Invalid request");
+
+ 
+    // Validate message ID
+    if (!isset($_GET['id']) || empty($_GET['id'])) {
+        throw new Exception('Message ID required', 400);
+    }
+
+    $messageId = (int)$_GET['id'];
+    if ($messageId <= 0) {
+        throw new Exception('Invalid message ID', 400);
+    }
+
+    $messageController = new messageController();
+    
+    // Verify message exists and belongs to user
+    $message = $messageController->getMessageById($messageId);
+    
+    if (!$message) {
+        throw new Exception('Message not found', 404);
+    }
+    
+  
+    
+   
+
+    // Delete the message
+    $success = $messageController->deleteMessage($messageId);
+    
+    if (!$success) {
+        throw new Exception('Failed to delete message', 500);
+    }
+
+    // Success response (redirect back or return JSON)
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        echo json_encode(['success' => true]);
+        exit;
+    } else {
+        header("Location: " . (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'contact.php') . "?success=message_deleted");
+        exit;
+    }
+
+} catch (Exception $e) {
+    // Error handling
+    $statusCode = $e->getCode() ?: 500;
+    http_response_code($statusCode);
+    
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        echo json_encode([
+            'error' => $e->getMessage(),
+            'code' => $statusCode
+        ]);
+    } else {
+        $errorMessages = [
+            400 => 'invalid_id',
+            401 => 'unauthorized',
+            403 => 'forbidden',
+            404 => 'message_not_found',
+            500 => 'delete_failed'
+        ];
+        $errorCode = $errorMessages[$statusCode] ?? 'server_error';
+        header("Location: " . (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'contact.php') . "?error=" . $errorCode);
+    }
+    exit;
 }
-?>
