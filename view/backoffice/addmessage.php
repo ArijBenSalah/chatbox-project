@@ -1,0 +1,44 @@
+<?php
+require_once(__DIR__ . "/../../controller/chatboxcontroller.php");
+require_once(__DIR__ . "/../../model/message.php");
+require_once(__DIR__ . "/../../config.php");
+require_once(__DIR__ . "/../../controller/messageController.php");
+session_start() ;
+$messagesController = new messageController();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
+    // Récupérer et nettoyer le message
+    $messageContent = trim($_POST['messageInput']);
+    $idreciever = $_POST['idreciever']; // ID du destinataire
+
+    // Vérification : message vide
+    if (empty($messageContent)) {
+        header("Location: chatbox.php?error=empty");
+        exit();
+    }
+
+    // Vérification : taille limite (optionnelle)
+    if (strlen($messageContent) > 1000) {
+        header("Location: chatbox.php?error=too_long");
+        exit();
+    }
+
+    // Créer un objet Message
+    $chatboxController = new chatboxcontroller();
+    $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);  
+    if (!$chat) {
+        $chatboxController->addChatbox(1, $idreciever); 
+        $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);
+    }
+    if ($messagesController->addMessage($messageContent, $chat['idChatbox'])) {
+        header("Location: chatbox.php?user_id=$idreciever&success=message_sent");
+        exit();
+    } else {
+        header("Location: chatbox.php?error=insert_failed");
+        exit();
+    }
+} else {
+    header("Location: chatbox.php?error=invalid_request");
+    exit();
+}
+?>

@@ -2,10 +2,11 @@
 require_once(__DIR__ . "/../../config.php");
 require_once(__DIR__ . "/../../controller/userController.php");
 require_once(__DIR__ . "/../../controller/messageController.php");
-
+session_start();
 $userController = new userController();
 $messageController = new messageController();
-$users = $userController->ListeUser();
+$users = $userController->getOtherUsers($_SESSION['user']['username']);
+
 
 // Get the selected user ID from URL parameter
 $selectedUserId = isset($_GET['user_id']) ? $_GET['user_id'] : null;
@@ -14,7 +15,7 @@ $messages = [];
 
 if ($selectedUserId) {
     $selectedUser = $userController->getUserById($selectedUserId);
-    $messages = $messageController->listeMessages(1, $selectedUserId);
+    $messages = $messageController->listeMessages($_SESSION['user']['id'], $selectedUserId);
 }
 ?>
 
@@ -480,7 +481,7 @@ if ($selectedUserId) {
             <div class="user-avatar">
                 <img src="<?php echo !empty($user['photo']) ? $user['photo'] : 'https://via.placeholder.com/40'; ?>" alt="<?php echo $user['username']; ?>">
             </div>
-            <div class="user-name"><?php echo $user['username']; ?></div>
+            <div class="user-name"><?php echo htmlspecialchars($user['username']); ?></div>
             <div class="user-status"></div>
         </a>
         <?php endforeach; ?>

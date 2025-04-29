@@ -31,6 +31,31 @@ class userController
             echo "Error: " . $e->getMessage();
         }
     }
+    public function getUserByUsername($username)
+    {
+        $db = config::getConnexion();
+        $sql = "SELECT * FROM users WHERE username = :username";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        }
+    }
+    public function getOtherUsers($username){
+        $db = config::getConnexion();
+        $sql = "SELECT * FROM users WHERE username != :username";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC); // <-- ici on utilise fetchAll !
+        } catch (PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        } 
+    }
 }   
 
 
