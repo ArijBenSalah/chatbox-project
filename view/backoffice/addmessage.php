@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
     $chatboxController = new chatboxcontroller();
     $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);  
     if (!$chat) {
-        $chatboxController->addChatbox(1, $idreciever); 
+        $chatboxController->addChatbox($_SESSION['user']['id'], $idreciever); 
         $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);
     }
     if ($messagesController->addMessage($messageContent, $chat['idChatbox'])) {

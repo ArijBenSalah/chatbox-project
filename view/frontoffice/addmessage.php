@@ -3,7 +3,7 @@ require_once(__DIR__ . "/../../controller/chatboxcontroller.php");
 require_once(__DIR__ . "/../../model/message.php");
 require_once(__DIR__ . "/../../config.php");
 require_once(__DIR__ . "/../../controller/messageController.php");
-
+session_start(); // Démarrer la session si ce n'est pas déjà fait
 $messagesController = new messageController();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
@@ -25,10 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
 
     // Créer un objet Message
     $chatboxController = new chatboxcontroller();
-    $chat = $chatboxController->getChatboxByIdsenderAndReciever(1,$idreciever);  
+    $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);  
     if (!$chat) {
-        $chatboxController->addChatbox(1, $idreciever); 
-        $chat = $chatboxController->getChatboxByIdsenderAndReciever(1,$idreciever);
+        $chatboxController->addChatbox($_SESSION['user']['id'], $idreciever); 
+        $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);
     }
     if ($messagesController->addMessage($messageContent, $chat['idChatbox'])) {
         header("Location: contact.php?user_id=$idreciever&success=message_sent");

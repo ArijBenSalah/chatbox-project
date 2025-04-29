@@ -507,14 +507,14 @@ if ($selectedUserId) {
                     </div>
                 <?php else: ?>
                     <?php foreach ($messages as $message): 
-                        $isSent = $message['idsender'] == 1;
+                        $isSent = $message['idsender'] == $_SESSION['user']['id'];
                         $sender = $isSent ? null : $userController->getUserById($message['idsender']);
                     ?>
                         <div class="message <?php echo $isSent ? 'sent' : 'received'; ?>" style="animation-delay: 0.1s" data-message-id="<?php echo $message['message_id']; ?>">
                             <?php if (!$isSent): ?>
                                 <div class="message-info">
                                     <div class="message-sender"><?php echo $sender['username']; ?></div>
-                                    <div class="message-time"><?php echo date('H:i', strtotime($message['created_at'])); ?></div>
+                                    <div class="message-time"><?php echo date('H:i', strtotime($message['message_created_at'])); ?></div>
                                 </div>
                             <?php endif; ?>
                             <div class="message-content-container">
@@ -546,7 +546,7 @@ if ($selectedUserId) {
             <form action="addmessage.php" method="POST">
                 <input type="hidden" name="idreciever" value="<?php echo $selectedUser['id']; ?>">
                 <div class="message-input">
-                    <input type="text" name="senderId" value ="<?php echo 1; ?>" hidden>
+                    <input type="text" name="senderId" value ="<?php echo $_SESSION['user']['id']; ?>" hidden>
                     <textarea name="messageInput" placeholder="Écrivez votre message ici..." required></textarea>
                     <button type="submit" class="send-button">➤</button>
                 </div>
