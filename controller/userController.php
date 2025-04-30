@@ -1,62 +1,47 @@
 <?php
-
 require_once(__DIR__ . "/../config.php");
 
+class userController {
 
-class userController
-{
-    public function ListeUser()
+    public function getOtherUsers($username, $search = '')
     {
         $db = config::getConnexion();
-        $sql = "SELECT * FROM users";
         try {
-            $stmt = $db->prepare($sql);
+            if (!empty($search)) {
+                $sql = "SELECT * FROM users 
+                        WHERE username != :username 
+                        AND (username LIKE :search OR nom LIKE :search OR prenom LIKE :search)";
+                $stmt = $db->prepare($sql);
+                $searchWildcard = "%" . $search . "%";
+                $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+                $stmt->bindParam(':search', $searchWildcard, PDO::PARAM_STR);
+            } else {
+                $sql = "SELECT * FROM users WHERE username != :username";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+            }
+
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
+            echo "Erreur : " . $e->getMessage();
+            return [];
         }
-        
     }
+
     public function getUserById($id)
     {
         $db = config::getConnexion();
-        $sql = "SELECT * FROM users WHERE id = :id";
         try {
-            $stmt = $db->prepare($sql);
+            $stmt = $db->prepare("SELECT * FROM users WHERE id = :id");
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
+            echo "Erreur : " . $e->getMessage();
+            return null;
         }
     }
-    public function getUserByUsername($username)
-    {
-        $db = config::getConnexion();
-        $sql = "SELECT * FROM users WHERE username = :username";
-        try {
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-        }
-    }
-    public function getOtherUsers($username){
-        $db = config::getConnexion();
-        $sql = "SELECT * FROM users WHERE username != :username";
-        try {
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC); // <-- ici on utilise fetchAll !
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-        } 
-    }
-}   
 
-
-?>
+}

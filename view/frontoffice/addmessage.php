@@ -1,44 +1,34 @@
 <?php
-require_once(__DIR__ . "/../../controller/chatboxcontroller.php");
-require_once(__DIR__ . "/../../model/message.php");
 require_once(__DIR__ . "/../../config.php");
 require_once(__DIR__ . "/../../controller/messageController.php");
-session_start(); // Démarrer la session si ce n'est pas déjà fait
-$messagesController = new messageController();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messageInput'])) {
-    // Récupérer et nettoyer le message
-    $messageContent = trim($_POST['messageInput']);
-    $idreciever = $_POST['idreciever']; // ID du destinataire
+session_start();
 
-    // Vérification : message vide
-    if (empty($messageContent)) {
-        header("Location: contact.php?error=empty");
-        exit();
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $senderId = $_POST['senderId'];
+    $receiverId = $_POST['idreciever'];
+    $content = trim($_POST['messageInput']);
+    $filePath = null;
+
+    // Handle file upload
+    if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === 0) {
+        $uploadDir = __DIR__ . '/uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $fileName = basename($_FILES['attachment']['name']);
+        $targetPath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
+            $filePath = 'uploads/' . $fileName;
+        }
     }
 
-    // Vérification : taille limite (optionnelle)
-    if (strlen($messageContent) > 1000) {
-        header("Location: contact.php?error=too_long");
-        exit();
-    }
+    $controller = new messageController();
+    $controller->addMessage($content, $senderId, $receiverId, $filePath);
 
-    // Créer un objet Message
-    $chatboxController = new chatboxcontroller();
-    $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);  
-    if (!$chat) {
-        $chatboxController->addChatbox($_SESSION['user']['id'], $idreciever); 
-        $chat = $chatboxController->getChatboxByIdsenderAndReciever($_SESSION['user']['id'],$idreciever);
-    }
-    if ($messagesController->addMessage($messageContent, $chat['idChatbox'])) {
-        header("Location: contact.php?user_id=$idreciever&success=message_sent");
-        exit();
-    } else {
-        header("Location: contact.php?error=insert_failed");
-        exit();
-    }
-} else {
-    header("Location: contact.php?error=invalid_request");
-    exit();
+    header("Location: contact.php?user_id=$receiverId");
+    exit;
 }
 ?>
